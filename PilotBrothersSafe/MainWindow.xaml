@@ -8,18 +8,15 @@
         Title="MainWindow" Height="300" Width="300">
     <Grid x:Name="CommonWindow">
         <Grid x:Name="StartMenu">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="*" />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
             </Grid.RowDefinitions>
 
             <Label
@@ -52,5 +49,7 @@
                 Grid.Row="4"
                 Grid.Column="0" />
         </Grid>
+
+        <Grid x:Name="Game" />
     </Grid>
 </Window>
