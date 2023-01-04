@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using Xceed.Wpf.Toolkit;
@@ -12,43 +12,50 @@ namespace PilotBrothersSafe
     /// </summary>
     public partial class MainWindow
     {
+        private const int MINIMUM_SAFE_SIZE_VALUE = 2;
+        private readonly HashSet<string> _constants = new();
+
+        /// <summary>
+        ///     Main window
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
-            CommonWindow.Children.Clear();
             CreateStartMenu();
         }
 
-        private void CreateStartMenu()
+        /// <summary>
+        ///     Очищаем поле
+        /// </summary>
+        private void ChildrenClear()
         {
-            CommonWindow.Children.Add(StartMenu);
+            CommonWindow.Children.Clear();
 
-            if (StartMenu.FindName("CreateSafe") is Button createSafeButton)
+            StartMenu.Children.Clear();
+            StartMenu.RowDefinitions.Clear();
+
+            Game.Children.Clear();
+            Game.RowDefinitions.Clear();
+            Game.ColumnDefinitions.Clear();
+
+            FormWin.Children.Clear();
+            FormWin.RowDefinitions.Clear();
+
+            var constants = new List<string>(_constants);
+
+            foreach (var constant in constants)
             {
-                createSafeButton.Click += CreateSafeButtonClick;
-            }
-        }
-
-        private void CreateSafeButtonClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button)
-            {
-                int.TryParse((StartMenu.FindName("SafeSize") as IntegerUpDown)?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var safeSize);
-
-                StartMenu.Children.Clear();
-
-                var buttons = CreateMatrixSafe(safeSize);
-
-                MatrixDraw(buttons);
+                UnregisterName(constant);
+                _constants.Remove(constant);
             }
         }
 
         /// <summary>
         ///     Создаем матрицу NxN и случайно заполняем ее ― и |
         /// </summary>
-        /// <param name="n"></param>
+        /// <param name="n">Размер сейфа</param>
         /// <returns></returns>
-        private static Button[,] CreateMatrixSafe(int n)
+        private Button[,] CreateMatrixSafe(int n)
         {
             var buttonMatrix = new Button[n, n];
             const bool defaultPosition = true;
@@ -59,7 +66,7 @@ namespace PilotBrothersSafe
                 {
                     buttonMatrix[i, j] = new Button
                     {
-                        Content = SetButtonContent(defaultPosition),
+                        Content = MatrixSafeLogic.MatrixSafeLogic.SetButtonContent(defaultPosition),
                         Tag = defaultPosition,
                         HorizontalAlignment = HorizontalAlignment.Stretch,
                         VerticalAlignment = VerticalAlignment.Stretch,
@@ -71,115 +78,140 @@ namespace PilotBrothersSafe
 
                     buttonMatrix[i, j].Click += (_, _) =>
                     {
-                        ChangeMatrixSafe(buttonMatrix, row, column);
+                        MatrixSafeLogic.MatrixSafeLogic.ChangeMatrixSafe(buttonMatrix, row, column);
 
-                        if (MatrixWin(buttonMatrix))
+                        if (MatrixSafeLogic.MatrixSafeLogic.MatrixWin(buttonMatrix))
                         {
-                            //FormIfWin();
+                            FormIfWin();
+
+                            if (FormWin.FindName("CreateStartMenu") is Button createSafeButton)
+                            {
+                                createSafeButton.Click += CreateStartMenuClick;
+                            }
                         }
                     };
                 }
             }
 
-            var buttonMatrixRotated = RandomRotating(buttonMatrix);
+            var buttonMatrixRotated = MatrixSafeLogic.MatrixSafeLogic.RandomRotating(buttonMatrix);
 
             return buttonMatrixRotated;
         }
 
-        private static Button[,] RandomRotating(Button[,] buttonMatrix)
+        /// <summary>
+        ///     Создаём сейф размера NxN
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CreateSafeButtonClick(object sender, RoutedEventArgs e)
         {
-            var rnd = new Random();
-            var count = 0;
-            var n = buttonMatrix.GetLength(0);
-
-            while (count < 10 * n * n)
+            if (sender is Button)
             {
-                buttonMatrix = ChangeMatrixSafe(buttonMatrix, rnd.Next(n), rnd.Next(n));
-                count++;
+                int.TryParse((StartMenu.FindName("SafeSize") as IntegerUpDown)?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var safeSize);
+
+                if (safeSize < MINIMUM_SAFE_SIZE_VALUE)
+                {
+                    throw new Exception($"Размер сейфа должен быть больше или равен {MINIMUM_SAFE_SIZE_VALUE}");
+                }
+
+                var buttons = CreateMatrixSafe(safeSize);
+
+                MatrixDraw(buttons);
             }
-
-            return buttonMatrix;
-        }
-
-        private static string SetButtonContent(bool position)
-        {
-            return position ? "|" : "—";
         }
 
         /// <summary>
-        ///     Меняем рукоятки в данном столбце и данной строке исходной матрицы
+        ///     Создаём стартовое меню
         /// </summary>
-        /// <param name="buttonMatrix"></param>
-        /// <param name="row"></param>
-        /// <param name="column"></param>
-        /// <returns></returns>
-        private static Button[,] ChangeMatrixSafe(Button[,] buttonMatrix, int row, int column)
+        private void CreateStartMenu()
         {
-            for (var i = 0; i < buttonMatrix.GetLength(0); i++) //Row
+            StartMenuDraw();
+
+            if (StartMenu.FindName("CreateSafe") is Button createSafeButton)
             {
-                buttonMatrix = RotateButton(buttonMatrix, i, column);
+                createSafeButton.Click += CreateSafeButtonClick;
             }
-
-            for (var j = 0; j < buttonMatrix.GetLength(1); j++) //Column
-            {
-                buttonMatrix = RotateButton(buttonMatrix, row, j);
-            }
-
-            buttonMatrix = RotateButton(buttonMatrix, row, column);
-
-            return buttonMatrix;
         }
 
         /// <summary>
-        ///     Поворот одной рукоятки
+        ///     Возвращаемся на стартовое меню
         /// </summary>
-        /// <param name="buttonMatrix"></param>
-        /// <param name="row"></param>
-        /// <param name="column"></param>
-        /// <returns></returns>
-        private static Button[,] RotateButton(Button[,] buttonMatrix, int row, int column)
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CreateStartMenuClick(object sender, RoutedEventArgs e)
         {
-            if (Convert.ToBoolean(buttonMatrix[row, column].Tag))
+            if (sender is Button)
             {
-                buttonMatrix[row, column].Tag = false;
-                buttonMatrix[row, column].Content = SetButtonContent(false);
+                CreateStartMenu();
             }
-            else
-            {
-                buttonMatrix[row, column].Tag = true;
-                buttonMatrix[row, column].Content = SetButtonContent(true);
-            }
-
-            return buttonMatrix;
         }
 
         /// <summary>
-        ///     Проверяем открылся ли сейф
+        ///     Отрисовываем форму выигрыша
         /// </summary>
-        /// <param name="buttonMatrix"></param>
-        /// <returns></returns>
-        private static bool MatrixWin(Button[,] buttonMatrix)
+        private void FormIfWin()
         {
-            var correctMatrix = buttonMatrix
-                .Cast<Button>()
-                .Select(x => Convert.ToBoolean(x.Tag))
-                .ToList();
+            ChildrenClear();
 
-            return correctMatrix.All(x => x) || correctMatrix.All(x => !x);
+            const int rowsCount = 6;
+
+            for (var i = 0; i < rowsCount; i++) //Row
+            {
+                FormWin.RowDefinitions.Add(new RowDefinition());
+            }
+
+            #region Win label
+
+            var label = new Label
+            {
+                Content = "Вы выиграли!",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            Grid.SetRow(label, 2);
+            Grid.SetColumn(label, 0);
+
+            FormWin.Children.Add(label);
+
+            #endregion Win label
+
+            #region Create start menu button
+
+            var createStartMenuButton = new Button
+            {
+                Content = "Главное меню",
+                Height = 25,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Name = RegisterNames.CREATE_START_MENU,
+                VerticalAlignment = VerticalAlignment.Center,
+                Width = 120
+            };
+
+            Grid.SetRow(createStartMenuButton, 3);
+            Grid.SetColumn(createStartMenuButton, 0);
+
+            FormWin.Children.Add(createStartMenuButton);
+
+            RegisterNameCustom(RegisterNames.CREATE_START_MENU, createStartMenuButton);
+
+            #endregion Create start menu button
+
+            CommonWindow.Children.Add(FormWin);
         }
 
+        /// <summary>
+        ///     Отрисовываем кнопки
+        /// </summary>
+        /// <param name="buttonMatrix"></param>
         private void MatrixDraw(Button[,] buttonMatrix)
         {
-            // Если в сейфе всего одна рукоятка
-            if (buttonMatrix.Length == 1)
-            {
-                //FormIfWin();
-            }
+            ChildrenClear();
 
             // Если сейф изначально открыт, поворачиваем первую рукоятку
-            if (MatrixWin(buttonMatrix))
+            if (MatrixSafeLogic.MatrixSafeLogic.MatrixWin(buttonMatrix))
             {
-                buttonMatrix = ChangeMatrixSafe(buttonMatrix, 0, 0);
+                buttonMatrix = MatrixSafeLogic.MatrixSafeLogic.ChangeMatrixSafe(buttonMatrix, 0, 0);
             }
 
             CommonWindow.Children.Add(Game);
@@ -189,7 +221,7 @@ namespace PilotBrothersSafe
                 Game.RowDefinitions.Add(new RowDefinition());
                 Game.ColumnDefinitions.Add(new ColumnDefinition());
 
-                for (var j = 0; j < buttonMatrix.GetLength(1); j++) //Column    
+                for (var j = 0; j < buttonMatrix.GetLength(1); j++) //Column
                 {
                     var buttonWithPosition = buttonMatrix[i, j];
 
@@ -199,6 +231,95 @@ namespace PilotBrothersSafe
                     Game.Children.Add(buttonWithPosition);
                 }
             }
+        }
+
+        /// <summary>
+        ///     Регистрируем имя и добавляем имя в кэш
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="scopedElement"></param>
+        private void RegisterNameCustom(string name, object scopedElement)
+        {
+            RegisterName(name, scopedElement);
+            _constants.Add(name);
+        }
+
+        /// <summary>
+        ///     Отрисовываем стартовое меню
+        /// </summary>
+        private void StartMenuDraw()
+        {
+            ChildrenClear();
+
+            const int rowsCount = 8;
+
+            for (var i = 0; i < rowsCount; i++) //Row
+            {
+                StartMenu.RowDefinitions.Add(new RowDefinition());
+            }
+
+            #region Safe size label
+
+            var label = new Label
+            {
+                Content = "Введите размер сейфа",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            Grid.SetRow(label, 2);
+            Grid.SetColumn(label, 0);
+
+            StartMenu.Children.Add(label);
+
+            #endregion Safe size label
+
+            #region Safe size value
+
+            var safeSize = new IntegerUpDown
+            {
+                Height = 20,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Increment = 1,
+                Maximum = 10,
+                Minimum = MINIMUM_SAFE_SIZE_VALUE,
+                Name = RegisterNames.SAFE_SIZE,
+                Value = 4,
+                VerticalAlignment = VerticalAlignment.Center,
+                Width = 60
+            };
+
+            Grid.SetRow(safeSize, 3);
+            Grid.SetColumn(safeSize, 0);
+
+            StartMenu.Children.Add(safeSize);
+
+            RegisterNameCustom(RegisterNames.SAFE_SIZE, safeSize);
+
+            #endregion Safe size value
+
+            #region Create safe button
+
+            var createSafeButton = new Button
+            {
+                Content = "Создать сейф",
+                Height = 25,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Name = RegisterNames.CREATE_SAFE,
+                VerticalAlignment = VerticalAlignment.Center,
+                Width = 120
+            };
+
+            Grid.SetRow(createSafeButton, 4);
+            Grid.SetColumn(createSafeButton, 0);
+
+            StartMenu.Children.Add(createSafeButton);
+
+            RegisterNameCustom(RegisterNames.CREATE_SAFE, createSafeButton);
+
+            #endregion Create safe button
+
+            CommonWindow.Children.Add(StartMenu);
         }
     }
 }

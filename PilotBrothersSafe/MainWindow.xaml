@@ -3,53 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
         Title="MainWindow" Height="300" Width="300">
     <Grid x:Name="CommonWindow">
-        <Grid x:Name="StartMenu">
-            <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-
-            <Label
-                Content="Введите размер сейфа"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Grid.Row="2"
-                Grid.Column="0" />
-
-            <xctk:IntegerUpDown
-                Name="SafeSize"
-                Height="20"
-                Width="60"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Increment="1"
-                Minimum="2"
-                Maximum="10"
-                Value="4"
-                Grid.Row="3"
-                Grid.Column="0" />
-
-            <Button
-                Name="CreateSafe"
-                Content="Создать сейф"
-                Height="25"
-                Width="120"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Grid.Row="4"
-                Grid.Column="0" />
-        </Grid>
-
+        <Grid x:Name="StartMenu" />
         <Grid x:Name="Game" />
+        <Grid x:Name="FormWin" />
     </Grid>
 </Window>
