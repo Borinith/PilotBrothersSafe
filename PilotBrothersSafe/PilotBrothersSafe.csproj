@@ -5,9 +5,14 @@
     <TargetFramework>net7.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
-    <StartupObject>PilotBrothersSafe.App</StartupObject>
+    <StartupObject>PilotBrothersSafe.Program</StartupObject>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <ApplicationIcon>Colleague.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Colleague.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\README.md">
@@ -18,10 +23,12 @@
 
   <ItemGroup>
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.5.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="MatrixSafeLogic\" />
+    <Folder Include="LanguageService\" />
   </ItemGroup>
 
 </Project>

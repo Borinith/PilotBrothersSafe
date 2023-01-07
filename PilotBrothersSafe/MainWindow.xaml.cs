@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PilotBrothersSafe.LanguageService;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
@@ -13,13 +14,17 @@ namespace PilotBrothersSafe
     public partial class MainWindow
     {
         private const int MINIMUM_SAFE_SIZE_VALUE = 2;
-        private readonly HashSet<string> _constants = new();
+        private readonly HashSet<string> _constants = new(4);
+        private readonly ILanguageService _languageService;
 
         /// <summary>
         ///     Main window
         /// </summary>
-        public MainWindow()
+        public MainWindow(ILanguageService languageService)
         {
+            _languageService = languageService;
+            Title = _languageService.TitleText;
+
             InitializeComponent();
             CreateStartMenu();
         }
@@ -84,7 +89,7 @@ namespace PilotBrothersSafe
                         {
                             FormIfWin();
 
-                            if (FormWin.FindName("CreateStartMenu") is Button createSafeButton)
+                            if (FormWin.FindName(RegisterNames.CREATE_START_MENU) is Button createSafeButton)
                             {
                                 createSafeButton.Click += CreateStartMenuClick;
                             }
@@ -107,11 +112,11 @@ namespace PilotBrothersSafe
         {
             if (sender is Button)
             {
-                int.TryParse((StartMenu.FindName("SafeSize") as IntegerUpDown)?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var safeSize);
+                var isParsed = int.TryParse((StartMenu.FindName(RegisterNames.SAFE_SIZE) as IntegerUpDown)?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var safeSize);
 
-                if (safeSize < MINIMUM_SAFE_SIZE_VALUE)
+                if (isParsed == false || safeSize < MINIMUM_SAFE_SIZE_VALUE)
                 {
-                    throw new Exception($"Размер сейфа должен быть больше или равен {MINIMUM_SAFE_SIZE_VALUE}");
+                    throw new Exception(_languageService.MinimumSafeSizeText + MINIMUM_SAFE_SIZE_VALUE);
                 }
 
                 var buttons = CreateMatrixSafe(safeSize);
@@ -127,7 +132,7 @@ namespace PilotBrothersSafe
         {
             StartMenuDraw();
 
-            if (StartMenu.FindName("CreateSafe") is Button createSafeButton)
+            if (StartMenu.FindName(RegisterNames.CREATE_SAFE) is Button createSafeButton)
             {
                 createSafeButton.Click += CreateSafeButtonClick;
             }
@@ -164,7 +169,7 @@ namespace PilotBrothersSafe
 
             var label = new Label
             {
-                Content = "Вы выиграли!",
+                Content = _languageService.WinText,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -180,7 +185,7 @@ namespace PilotBrothersSafe
 
             var createStartMenuButton = new Button
             {
-                Content = "Главное меню",
+                Content = _languageService.MainMenuText,
                 Height = 25,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Name = RegisterNames.CREATE_START_MENU,
@@ -262,7 +267,7 @@ namespace PilotBrothersSafe
 
             var label = new Label
             {
-                Content = "Введите размер сейфа",
+                Content = _languageService.SafeSizeText,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -302,7 +307,7 @@ namespace PilotBrothersSafe
 
             var createSafeButton = new Button
             {
-                Content = "Создать сейф",
+                Content = _languageService.CreateSafeText,
                 Height = 25,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Name = RegisterNames.CREATE_SAFE,
