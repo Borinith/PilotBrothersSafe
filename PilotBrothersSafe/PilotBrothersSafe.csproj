@@ -8,6 +8,8 @@
     <StartupObject>PilotBrothersSafe.Program</StartupObject>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <ApplicationIcon>Colleague.ico</ApplicationIcon>
+    <Authors>Cobra Commander</Authors>
+    <Product>PilotBrothersSafe</Product>
   </PropertyGroup>
 
   <ItemGroup>
