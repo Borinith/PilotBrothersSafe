@@ -17,8 +17,8 @@ namespace PilotBrothersSafe
                        {
                            services.AddSingleton<App>();
                            services.AddSingleton<MainWindow>();
-                           services.AddTransient<ILanguageService, EngLanguageService>();
-                           //services.AddTransient<ILanguageService, RusLanguageService>();
+                           services.AddSingleton<ILanguageService, EngLanguageService>();
+                           //services.AddSingleton<ILanguageService, RusLanguageService>();
                        })
                        .Build())
             {
