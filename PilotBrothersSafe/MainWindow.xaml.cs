@@ -2,8 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using Xceed.Wpf.Toolkit;
 
 namespace PilotBrothersSafe
@@ -13,17 +15,29 @@ namespace PilotBrothersSafe
     /// </summary>
     public partial class MainWindow
     {
+        private const string CANNOT_LOAD_LANGUAGE = "Cannot load language";
+        private const string LANGUAGE_IMAGES_FOLDER = "LanguageImages";
         private const int MINIMUM_SAFE_SIZE_VALUE = 2;
         private readonly HashSet<string> _constants = new(4);
-        private readonly ILanguageService _languageService;
+        private readonly Dictionary<LanguageEnum, string> _imagePaths = new();
+        private readonly ProxyLanguage.ProxyLanguageResolver _resovler;
+        private LanguageEnum _currentLanguage = LanguageEnum.English;
+        private ILanguageService _languageService = null!;
+        private int _safeSizeSelectedValue = 4;
 
         /// <summary>
         ///     Main window
         /// </summary>
-        public MainWindow(ILanguageService languageService)
+        public MainWindow(ProxyLanguage.ProxyLanguageResolver resovler)
         {
-            _languageService = languageService;
-            Title = _languageService.TitleText;
+            _resovler = resovler;
+
+            foreach (var language in Enum.GetValues<LanguageEnum>())
+            {
+                _imagePaths.Add(language, $"{language}.png");
+            }
+
+            UpdateLanguage();
 
             InitializeComponent();
             CreateStartMenu();
@@ -112,12 +126,14 @@ namespace PilotBrothersSafe
         {
             if (sender is Button)
             {
-                var isParsed = int.TryParse((StartMenu.FindName(RegisterNames.SAFE_SIZE) as IntegerUpDown)?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var safeSize);
+                var isParsedSafeSize = int.TryParse((StartMenu.FindName(RegisterNames.SAFE_SIZE) as IntegerUpDown)?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var safeSize);
 
-                if (isParsed == false || safeSize < MINIMUM_SAFE_SIZE_VALUE)
+                if (isParsedSafeSize == false || safeSize < MINIMUM_SAFE_SIZE_VALUE)
                 {
                     throw new Exception(_languageService.MinimumSafeSizeText + MINIMUM_SAFE_SIZE_VALUE);
                 }
+
+                _safeSizeSelectedValue = safeSize;
 
                 var buttons = CreateMatrixSafe(safeSize);
 
@@ -135,6 +151,11 @@ namespace PilotBrothersSafe
             if (StartMenu.FindName(RegisterNames.CREATE_SAFE) is Button createSafeButton)
             {
                 createSafeButton.Click += CreateSafeButtonClick;
+            }
+
+            if (StartMenu.FindName(RegisterNames.UPDATE_LANGUAGE) is Button updateLanguageButton)
+            {
+                updateLanguageButton.Click += UpdateLanguageButtonClick;
             }
         }
 
@@ -289,7 +310,7 @@ namespace PilotBrothersSafe
                 Maximum = 10,
                 Minimum = MINIMUM_SAFE_SIZE_VALUE,
                 Name = RegisterNames.SAFE_SIZE,
-                Value = 4,
+                Value = _safeSizeSelectedValue,
                 VerticalAlignment = VerticalAlignment.Center,
                 Width = 60
             };
@@ -324,7 +345,80 @@ namespace PilotBrothersSafe
 
             #endregion Create safe button
 
+            #region Create update language button
+
+            var img = new Image
+            {
+                Source = new BitmapImage(new Uri(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, LANGUAGE_IMAGES_FOLDER, _imagePaths[_currentLanguage]), UriKind.RelativeOrAbsolute))
+            };
+
+            var stackPnl = new StackPanel
+            {
+                Orientation = Orientation.Horizontal
+            };
+
+            stackPnl.Children.Add(img);
+
+            var createUpdateLanguageButton = new Button
+            {
+                Content = stackPnl,
+                Height = 30,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Name = RegisterNames.UPDATE_LANGUAGE,
+                Tag = _currentLanguage,
+                VerticalAlignment = VerticalAlignment.Center,
+                Width = 30
+            };
+
+            Grid.SetRow(createUpdateLanguageButton, 6);
+            Grid.SetColumn(createUpdateLanguageButton, 0);
+
+            StartMenu.Children.Add(createUpdateLanguageButton);
+
+            RegisterNameCustom(RegisterNames.UPDATE_LANGUAGE, createUpdateLanguageButton);
+
+            #endregion Create update language button
+
             CommonWindow.Children.Add(StartMenu);
+        }
+
+        private void UpdateLanguage()
+        {
+            var languageService = _resovler(_currentLanguage);
+
+            _languageService = languageService ?? throw new Exception(CANNOT_LOAD_LANGUAGE);
+
+            Title = _languageService.TitleText;
+        }
+
+        private void UpdateLanguageButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                var isParsedSafeSize = int.TryParse((StartMenu.FindName(RegisterNames.SAFE_SIZE) as IntegerUpDown)?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var safeSize);
+
+                if (isParsedSafeSize == false || safeSize < MINIMUM_SAFE_SIZE_VALUE)
+                {
+                    throw new Exception(_languageService.MinimumSafeSizeText + MINIMUM_SAFE_SIZE_VALUE);
+                }
+
+                _safeSizeSelectedValue = safeSize;
+
+                var isParsedCurrentLanguage = Enum.TryParse<LanguageEnum>(button.Tag.ToString(), out var currentLanguage);
+
+                if (isParsedCurrentLanguage == false)
+                {
+                    throw new Exception(CANNOT_LOAD_LANGUAGE);
+                }
+
+                var allLanguages = Enum.GetValues<LanguageEnum>();
+                var currentLanguageIndex = Array.IndexOf(allLanguages, currentLanguage);
+                var nextLanguageIndex = (currentLanguageIndex + 1) % allLanguages.Length;
+
+                _currentLanguage = (LanguageEnum)nextLanguageIndex;
+                UpdateLanguage();
+                CreateStartMenu();
+            }
         }
     }
 }

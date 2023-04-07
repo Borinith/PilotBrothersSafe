@@ -25,12 +25,18 @@
 
   <ItemGroup>
     <PackageReference Include="Extended.Wpf.Toolkit" Version="4.5.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="MatrixSafeLogic\" />
-    <Folder Include="LanguageService\" />
+    <Folder Include="LanguageImages\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="LanguageImages\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
