@@ -20,7 +20,7 @@ namespace PilotBrothersSafe
         private const int MINIMUM_SAFE_SIZE_VALUE = 2;
         private readonly HashSet<string> _constants = new(4);
         private readonly Dictionary<LanguageEnum, string> _imagePaths = new();
-        private readonly ProxyLanguage.ProxyLanguageResolver _resovler;
+        private readonly ProxyLanguage.ProxyLanguageResolver _resolver;
         private LanguageEnum _currentLanguage = LanguageEnum.English;
         private ILanguageService _languageService = null!;
         private int _safeSizeSelectedValue = 4;
@@ -28,9 +28,9 @@ namespace PilotBrothersSafe
         /// <summary>
         ///     Main window
         /// </summary>
-        public MainWindow(ProxyLanguage.ProxyLanguageResolver resovler)
+        public MainWindow(ProxyLanguage.ProxyLanguageResolver resolver)
         {
-            _resovler = resovler;
+            _resolver = resolver;
 
             foreach (var language in Enum.GetValues<LanguageEnum>())
             {
@@ -384,7 +384,7 @@ namespace PilotBrothersSafe
 
         private void UpdateLanguage()
         {
-            var languageService = _resovler(_currentLanguage);
+            var languageService = _resolver(_currentLanguage);
 
             _languageService = languageService ?? throw new Exception(CANNOT_LOAD_LANGUAGE);
 
