@@ -1,8 +1,11 @@
 ﻿using PilotBrothersSafe.LanguageService;
+using PilotBrothersSafe.SafeConvertExtensions;
+using PilotBrothersSafe.SafeLogic;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -21,6 +24,7 @@ namespace PilotBrothersSafe
         private readonly HashSet<string> _constants = new(4);
         private readonly Dictionary<LanguageEnum, string> _imagePaths = new();
         private readonly ProxyLanguage.ProxyLanguageResolver _resolver;
+        private readonly ISafeLogic _safeLogic;
         private LanguageEnum _currentLanguage = LanguageEnum.English;
         private ILanguageService _languageService = null!;
         private int _safeSizeSelectedValue = 4;
@@ -28,9 +32,10 @@ namespace PilotBrothersSafe
         /// <summary>
         ///     Main window
         /// </summary>
-        public MainWindow(ProxyLanguage.ProxyLanguageResolver resolver)
+        public MainWindow(ProxyLanguage.ProxyLanguageResolver resolver, ISafeLogic safeLogic)
         {
             _resolver = resolver;
+            _safeLogic = safeLogic;
 
             foreach (var language in Enum.GetValues<LanguageEnum>())
             {
@@ -40,7 +45,7 @@ namespace PilotBrothersSafe
             UpdateLanguage();
 
             InitializeComponent();
-            CreateStartMenu();
+            StartMenuDraw();
         }
 
         /// <summary>
@@ -74,45 +79,51 @@ namespace PilotBrothersSafe
         /// </summary>
         /// <param name="n">Размер сейфа</param>
         /// <returns></returns>
-        private Button[,] CreateMatrixSafe(int n)
+        private async Task<Button[,]> CreateMatrixSafe(int n)
         {
-            var buttonMatrix = new Button[n, n];
+            var matrix = new bool[n, n];
             const bool defaultPosition = true;
 
             for (var i = 0; i < n; i++) //Row
             {
                 for (var j = 0; j < n; j++) //Column
                 {
-                    buttonMatrix[i, j] = new Button
-                    {
-                        Content = MatrixSafeLogic.MatrixSafeLogic.SetButtonContent(defaultPosition),
-                        Tag = defaultPosition,
-                        HorizontalAlignment = HorizontalAlignment.Stretch,
-                        VerticalAlignment = VerticalAlignment.Stretch,
-                        Margin = new Thickness(0.5)
-                    };
+                    matrix[i, j] = defaultPosition;
+                }
+            }
 
+            matrix = await _safeLogic.RandomRotating(matrix);
+
+            // Если сейф изначально открыт, поворачиваем первую рукоятку
+            if (await _safeLogic.MatrixWin(matrix))
+            {
+                matrix = await _safeLogic.ChangeSafe(matrix, 0, 0);
+            }
+
+            var buttonMatrixRotated = matrix.ToButtonArray();
+
+            for (var i = 0; i < n; i++) //Row
+            {
+                for (var j = 0; j < n; j++) //Column
+                {
                     var row = i;
                     var column = j;
 
-                    buttonMatrix[i, j].Click += (_, _) =>
+                    buttonMatrixRotated[i, j].Click += async (_, _) =>
                     {
-                        MatrixSafeLogic.MatrixSafeLogic.ChangeMatrixSafe(buttonMatrix, row, column);
+                        matrix = await _safeLogic.ChangeSafe(matrix, row, column);
 
-                        if (MatrixSafeLogic.MatrixSafeLogic.MatrixWin(buttonMatrix))
+                        if (await _safeLogic.MatrixWin(matrix))
                         {
                             FormIfWin();
-
-                            if (FormWin.FindName(RegisterNames.CREATE_START_MENU) is Button createSafeButton)
-                            {
-                                createSafeButton.Click += CreateStartMenuClick;
-                            }
+                        }
+                        else
+                        {
+                            buttonMatrixRotated = buttonMatrixRotated.UpdateButtonMatrix(matrix);
                         }
                     };
                 }
             }
-
-            var buttonMatrixRotated = MatrixSafeLogic.MatrixSafeLogic.RandomRotating(buttonMatrix);
 
             return buttonMatrixRotated;
         }
@@ -122,10 +133,16 @@ namespace PilotBrothersSafe
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void CreateSafeButtonClick(object sender, RoutedEventArgs e)
+        private async void CreateSafeButtonClick(object sender, RoutedEventArgs e)
         {
-            if (sender is Button)
+            if (sender is Button createSafeButton)
             {
+                if (StartMenu.FindName(RegisterNames.UPDATE_LANGUAGE) is Button updateLanguageButton)
+                {
+                    createSafeButton.IsEnabled = false;
+                    updateLanguageButton.IsEnabled = false;
+                }
+
                 var isParsedSafeSize = int.TryParse((StartMenu.FindName(RegisterNames.SAFE_SIZE) as IntegerUpDown)?.Text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var safeSize);
 
                 if (isParsedSafeSize == false || safeSize < MINIMUM_SAFE_SIZE_VALUE)
@@ -135,27 +152,9 @@ namespace PilotBrothersSafe
 
                 _safeSizeSelectedValue = safeSize;
 
-                var buttons = CreateMatrixSafe(safeSize);
+                var buttons = await CreateMatrixSafe(safeSize);
 
                 MatrixDraw(buttons);
-            }
-        }
-
-        /// <summary>
-        ///     Создаём стартовое меню
-        /// </summary>
-        private void CreateStartMenu()
-        {
-            StartMenuDraw();
-
-            if (StartMenu.FindName(RegisterNames.CREATE_SAFE) is Button createSafeButton)
-            {
-                createSafeButton.Click += CreateSafeButtonClick;
-            }
-
-            if (StartMenu.FindName(RegisterNames.UPDATE_LANGUAGE) is Button updateLanguageButton)
-            {
-                updateLanguageButton.Click += UpdateLanguageButtonClick;
             }
         }
 
@@ -168,7 +167,7 @@ namespace PilotBrothersSafe
         {
             if (sender is Button)
             {
-                CreateStartMenu();
+                StartMenuDraw();
             }
         }
 
@@ -214,6 +213,8 @@ namespace PilotBrothersSafe
                 Width = 120
             };
 
+            createStartMenuButton.Click += CreateStartMenuClick;
+
             Grid.SetRow(createStartMenuButton, 3);
             Grid.SetColumn(createStartMenuButton, 0);
 
@@ -233,12 +234,6 @@ namespace PilotBrothersSafe
         private void MatrixDraw(Button[,] buttonMatrix)
         {
             ChildrenClear();
-
-            // Если сейф изначально открыт, поворачиваем первую рукоятку
-            if (MatrixSafeLogic.MatrixSafeLogic.MatrixWin(buttonMatrix))
-            {
-                buttonMatrix = MatrixSafeLogic.MatrixSafeLogic.ChangeMatrixSafe(buttonMatrix, 0, 0);
-            }
 
             CommonWindow.Children.Add(Game);
 
@@ -336,6 +331,8 @@ namespace PilotBrothersSafe
                 Width = 120
             };
 
+            createSafeButton.Click += CreateSafeButtonClick;
+
             Grid.SetRow(createSafeButton, 4);
             Grid.SetColumn(createSafeButton, 0);
 
@@ -369,6 +366,8 @@ namespace PilotBrothersSafe
                 VerticalAlignment = VerticalAlignment.Center,
                 Width = 30
             };
+
+            createUpdateLanguageButton.Click += UpdateLanguageButtonClick;
 
             Grid.SetRow(createUpdateLanguageButton, 6);
             Grid.SetColumn(createUpdateLanguageButton, 0);
@@ -416,8 +415,9 @@ namespace PilotBrothersSafe
                 var nextLanguageIndex = (currentLanguageIndex + 1) % allLanguages.Length;
 
                 _currentLanguage = (LanguageEnum)nextLanguageIndex;
+
                 UpdateLanguage();
-                CreateStartMenu();
+                StartMenuDraw();
             }
         }
     }

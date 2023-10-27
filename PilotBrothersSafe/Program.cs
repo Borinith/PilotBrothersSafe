@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PilotBrothersSafe.LanguageService;
+using PilotBrothersSafe.SafeLogic;
 using System;
 
 namespace PilotBrothersSafe
@@ -17,6 +18,7 @@ namespace PilotBrothersSafe
                        {
                            services.AddSingleton<App>();
                            services.AddSingleton<MainWindow>();
+                           services.AddSingleton<ISafeLogic, SafeLogic.SafeLogic>();
 
                            services.AddSingleton<EngLanguageService>();
                            services.AddSingleton<RusLanguageService>();
