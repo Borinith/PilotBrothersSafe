@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -37,6 +38,71 @@ namespace PilotBrothersSafe.SafeLogic
         }
 
         /// <summary>
+        ///     Создаём сейф размера n*n
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        public Task<bool[,]> CreateSafe(int n)
+        {
+            return Task.Run(() =>
+            {
+                var matrix = new bool[n, n];
+                const bool defaultPosition = true;
+
+                for (var i = 0; i < n; i++) //Row
+                {
+                    for (var j = 0; j < n; j++) //Column
+                    {
+                        matrix[i, j] = defaultPosition;
+                    }
+                }
+
+                return matrix;
+            });
+        }
+
+        /// <summary>
+        ///     Возможно ли открыть сейф?
+        /// </summary>
+        /// <param name="matrix"></param>
+        /// <param name="iterationCount"></param>
+        /// <returns></returns>
+        public async Task<bool> IsPossibleToSolveSafe(bool[,] matrix, int iterationCount = 0)
+        {
+            const bool searchingPosition = true;
+
+            var placesWithSearchingPosition = new List<(int row, int column)>();
+
+            for (var i = 0; i < matrix.GetLength(0); i++) //Row
+            {
+                for (var j = 0; j < matrix.GetLength(1); j++) //Column
+                {
+                    if (matrix[i, j] == searchingPosition)
+                    {
+                        placesWithSearchingPosition.Add((i, j));
+                    }
+                }
+            }
+
+            foreach (var (placeRow, placeColumn) in placesWithSearchingPosition)
+            {
+                matrix = await ChangeSafe(matrix, placeRow, placeColumn);
+
+                if (await MatrixWin(matrix))
+                {
+                    return true;
+                }
+            }
+
+            if (iterationCount < 10)
+            {
+                return await IsPossibleToSolveSafe(matrix, iterationCount + 1);
+            }
+
+            return false;
+        }
+
+        /// <summary>
         ///     Проверяем открылся ли сейф
         /// </summary>
         /// <param name="matrix"></param>
@@ -61,14 +127,21 @@ namespace PilotBrothersSafe.SafeLogic
             var rnd = new Random();
             var count = 0;
             var n = matrix.GetLength(0);
+            var randomRotatingMatrix = (bool[,])matrix.Clone();
 
-            while (count < 10 * n * n)
+            while (count < 10 * n)
             {
-                matrix = await ChangeSafe(matrix, rnd.Next(n), rnd.Next(n));
+                randomRotatingMatrix = await ChangeSafe(randomRotatingMatrix, rnd.Next(n), rnd.Next(n));
                 count++;
             }
 
-            return matrix;
+            // Если сейф всё же открыт, поворачиваем первую рукоятку
+            if (await MatrixWin(randomRotatingMatrix))
+            {
+                randomRotatingMatrix = await ChangeSafe(randomRotatingMatrix, 0, 0);
+            }
+
+            return randomRotatingMatrix;
         }
 
         /// <summary>

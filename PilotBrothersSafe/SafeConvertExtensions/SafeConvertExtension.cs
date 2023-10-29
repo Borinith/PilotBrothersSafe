@@ -15,7 +15,7 @@ namespace PilotBrothersSafe.SafeConvertExtensions
         /// <returns></returns>
         public static Button[,] ToButtonArray(this bool[,] matrix)
         {
-            var buttonMatrix = new Button[matrix.GetLength(0), matrix.GetLength(0)];
+            var buttonMatrix = new Button[matrix.GetLength(0), matrix.GetLength(1)];
 
             for (var i = 0; i < matrix.GetLength(0); i++) //Row
             {

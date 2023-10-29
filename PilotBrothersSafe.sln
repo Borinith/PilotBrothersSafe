@@ -5,7 +5,9 @@ VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PilotBrothersSafe", "PilotBrothersSafe\PilotBrothersSafe.csproj", "{17CF17FC-D3E6-4199-843C-8BCBC830DC18}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PilotBrothersSafe.SafeLogic", "PilotBrothersSafe.SafeLogic\PilotBrothersSafe.SafeLogic.csproj", "{8D65CE9A-F6CA-4F57-B4E5-47D5407FB0D7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PilotBrothersSafe.SafeLogic", "PilotBrothersSafe.SafeLogic\PilotBrothersSafe.SafeLogic.csproj", "{8D65CE9A-F6CA-4F57-B4E5-47D5407FB0D7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PilotBrothersSafe.Tests", "PilotBrothersSafe.Tests\PilotBrothersSafe.Tests.csproj", "{4BF75BF4-04D6-4D3B-A988-585E61602BCA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{8D65CE9A-F6CA-4F57-B4E5-47D5407FB0D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D65CE9A-F6CA-4F57-B4E5-47D5407FB0D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D65CE9A-F6CA-4F57-B4E5-47D5407FB0D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BF75BF4-04D6-4D3B-A988-585E61602BCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BF75BF4-04D6-4D3B-A988-585E61602BCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BF75BF4-04D6-4D3B-A988-585E61602BCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BF75BF4-04D6-4D3B-A988-585E61602BCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

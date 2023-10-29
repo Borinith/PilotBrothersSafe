@@ -81,24 +81,8 @@ namespace PilotBrothersSafe
         /// <returns></returns>
         private async Task<Button[,]> CreateMatrixSafe(int n)
         {
-            var matrix = new bool[n, n];
-            const bool defaultPosition = true;
-
-            for (var i = 0; i < n; i++) //Row
-            {
-                for (var j = 0; j < n; j++) //Column
-                {
-                    matrix[i, j] = defaultPosition;
-                }
-            }
-
+            var matrix = await _safeLogic.CreateSafe(n);
             matrix = await _safeLogic.RandomRotating(matrix);
-
-            // Если сейф изначально открыт, поворачиваем первую рукоятку
-            if (await _safeLogic.MatrixWin(matrix))
-            {
-                matrix = await _safeLogic.ChangeSafe(matrix, 0, 0);
-            }
 
             var buttonMatrixRotated = matrix.ToButtonArray();
 
