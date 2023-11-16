@@ -2,6 +2,7 @@
 using PilotBrothersSafe.SafeConvertExtensions;
 using PilotBrothersSafe.SafeLogic;
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -22,7 +23,7 @@ namespace PilotBrothersSafe
         private const string LANGUAGE_IMAGES_FOLDER = "LanguageImages";
         private const int MINIMUM_SAFE_SIZE_VALUE = 2;
         private readonly HashSet<string> _constants = new(4);
-        private readonly Dictionary<LanguageEnum, string> _imagePaths = new();
+        private readonly FrozenDictionary<LanguageEnum, string> _imagePaths;
         private readonly ProxyLanguage.ProxyLanguageResolver _resolver;
         private readonly ISafeLogic _safeLogic;
         private LanguageEnum _currentLanguage = LanguageEnum.English;
@@ -37,10 +38,7 @@ namespace PilotBrothersSafe
             _resolver = resolver;
             _safeLogic = safeLogic;
 
-            foreach (var language in Enum.GetValues<LanguageEnum>())
-            {
-                _imagePaths.Add(language, $"{language}.png");
-            }
+            _imagePaths = Enum.GetValues<LanguageEnum>().ToFrozenDictionary(language => language, language => $"{language}.png");
 
             UpdateLanguage();
 
