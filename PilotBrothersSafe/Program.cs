@@ -11,38 +11,37 @@ namespace PilotBrothersSafe
         [STAThread]
         public static void Main()
         {
-            // Создаем хост приложения
-            using (var host = Host.CreateDefaultBuilder()
-                       // Внедряем сервисы
-                       .ConfigureServices(services =>
-                       {
-                           services.AddSingleton<App>();
-                           services.AddSingleton<MainWindow>();
-                           services.AddSingleton<ISafeLogic, SafeLogic.SafeLogic>();
+            // Создаем билдер
+            var builder = Host.CreateApplicationBuilder();
 
-                           services.AddSingleton<EngLanguageService>();
-                           services.AddSingleton<RusLanguageService>();
-                           services.AddSingleton<HebLanguageService>();
+            // Внедряем сервисы
+            builder.Services.AddSingleton<App>();
+            builder.Services.AddSingleton<MainWindow>();
+            builder.Services.AddSingleton<ISafeLogic, SafeLogic.SafeLogic>();
 
-                           services.AddSingleton<ProxyLanguage.ProxyLanguageResolver>(serviceProvider => language =>
-                           {
-                               return language switch
-                               {
-                                   LanguageEnum.English => serviceProvider.GetService<EngLanguageService>(),
-                                   LanguageEnum.Russian => serviceProvider.GetService<RusLanguageService>(),
-                                   LanguageEnum.Hebrew => serviceProvider.GetService<HebLanguageService>(),
-                                   _ => null
-                               };
-                           });
-                       })
-                       .Build())
+            builder.Services.AddSingleton<EngLanguageService>();
+            builder.Services.AddSingleton<RusLanguageService>();
+            builder.Services.AddSingleton<HebLanguageService>();
+
+            builder.Services.AddSingleton<ProxyLanguage.ProxyLanguageResolver>(serviceProvider => language =>
             {
-                // Получаем сервис - объект класса App
-                var app = host.Services.GetService<App>();
+                return language switch
+                {
+                    LanguageEnum.English => serviceProvider.GetService<EngLanguageService>(),
+                    LanguageEnum.Russian => serviceProvider.GetService<RusLanguageService>(),
+                    LanguageEnum.Hebrew => serviceProvider.GetService<HebLanguageService>(),
+                    _ => null
+                };
+            });
 
-                // Запускаем приложения
-                app?.Run();
-            }
+            // Создаем хост приложения
+            using var host = builder.Build();
+
+            // Получаем сервис - объект класса App
+            var app = host.Services.GetService<App>();
+
+            // Запускаем приложение
+            app?.Run();
         }
     }
 }
